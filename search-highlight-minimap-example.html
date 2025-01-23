@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+
+<style>
+::highlight(match) {
+  background-color: #ff0;
+  color: #000;
+}
+
+body { margin: 0; }
+
+#container {
+  text-align: center;
+}
+
+#match-minimap {
+  display: flex;
+  width: 20px;
+  height: 100vh;
+  position: fixed;
+  right: 0;
+  top: 0;
+  background: transparent;
+}
+
+.match-position {
+  position: absolute;
+  width: 100%;
+  height: 2px;
+  background-color: #c5b204;
+}
+</style>
+
+<body>
+    <div id='container'></div>
+    <div id="match-minimap"></div>
+</body>
+
+<script>
+let minimap = document.getElementById("match-minimap");
+
+// Create highlighter if supported
+if ("highlights" in CSS) {
+    CSS.highlights.set('match', new Highlight());
+}
+
+
+// Make some elements
+let container = document.querySelector("#container");
+for (let i = 0; i <= 1000; i++) {
+    const el = document.createElement('div');
+    el.innerHTML = 'Hello';
+    if ([87, 444, 899].includes(i)) {
+        el.innerHTML = 'World';
+    }
+    if ([0, 250, 500, 750, 1000].includes(i)) {
+        el.innerHTML = 'Hello World @ 250s';
+    }
+    if ([420, 666].includes(i)) {
+        el.innerHTML = 'Hell World, Hell World';
+    }
+    container.append(el);
+}
+
+
+// "Search" for our word and apply highlighting to matches
+let words = document.querySelectorAll("#container div");
+let re = "World"
+words.forEach(word => {
+    // You can only highlight text nodes, so drill down to that level.
+    word.childNodes.forEach(node => {
+        if (node.nodeType === Node.TEXT_NODE) {
+            let matches = [...node.data.matchAll(re)];
+            matches.forEach((match) => {
+                // Highlight the matched range with the CSS highlighter
+                if ("highlights" in CSS) {
+                    let r = new StaticRange({
+                        'startContainer': node,
+                        'endContainer': node,
+                        'startOffset': match.index,
+                        'endOffset': match.index + match[0].length
+                    });
+                    CSS.highlights.get('match').add(r);
+                }
+
+                // Add minimap notch at element height within container
+                let notch = document.createElement('div');
+                notch.setAttribute('class', 'match-position');
+                let pos = (node.parentElement.offsetTop / container.offsetHeight) * 100
+                // Cap min/max because they might be hard to see at the extremes
+                pos = Math.min(99.6, Math.max(0.4, pos));
+                notch.style.top = pos +"%";
+                minimap.append(notch);
+            })
+        }
+    })
+})
+</script>
